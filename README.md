@@ -26,6 +26,7 @@ A simple Docker-based video downloader application that supports downloading vid
 ## Quick Start
 
 ```bash
+docker pull ghcr.io/catsec/video-downloader:latest
 docker run -d -p 8000:8000 --name video-downloader ghcr.io/catsec/video-downloader:latest
 ```
 
