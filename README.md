@@ -25,19 +25,20 @@ A simple Docker-based video downloader application that supports downloading vid
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
-
 ```bash
-cd video-downloader
-docker-compose up -d
+docker run -d -p 8000:8000 --name video-downloader ghcr.io/catsec/video-downloader:latest
 ```
 
-### Using Docker CLI
+Then open http://localhost:8000 in your browser.
+
+### Building from Source
+
+If you want to build locally instead:
 
 ```bash
+git clone https://github.com/catsec/video-downloader.git
 cd video-downloader
-docker build -t video-downloader .
-docker run -d -p 8000:8000 --name video-downloader video-downloader
+docker-compose up -d
 ```
 
 ## Usage
