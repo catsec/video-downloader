@@ -216,15 +216,6 @@ docker exec -it video-downloader sh
 - Some platforms may block downloads from server IPs
 - Private Instagram content requires cookies (not implemented by default)
 
-## Future Enhancements
-
-- Real-time progress tracking via WebSockets
-- Multiple quality options (720p, 1080p, 4K)
-- Audio-only download (MP3 extraction)
-- Batch download support
-- Download history with database
-- User authentication
-
 ## License
 
 This project is for educational purposes. Ensure you comply with the terms of service of the platforms you download from.
