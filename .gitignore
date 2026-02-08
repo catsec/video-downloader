@@ -1,0 +1,44 @@
+# Environment files
+.env
+
+# Deployment files
+vdl-deploy.zip
+setup.sh
+build-package.sh
+deploy-proxmox.sh
+
+# Claude files
+.claude/
+CLAUDE.md
+
+# Cloudflare documentation
+CLOUDFLARE_SETUP.md
+
+# Source icon
+icon.jpg
+
+# Downloads directory (keep structure, ignore content)
+downloads/*.mp4
+downloads/*.json
+downloads/*.webm
+downloads/*.mkv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

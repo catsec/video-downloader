@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+</head>
+<body>
+    <div class="container">
+        <h1>Video Downloader</h1>
+        <p class="subtitle">Download videos from YouTube, Facebook, Instagram, X/Twitter, and Vimeo</p>
+
+        <form id="downloadForm">
+            <div class="form-group">
+                <label for="videoUrl">Video URL</label>
+                <input
+                    type="text"
+                    id="videoUrl"
+                    placeholder="Paste video URL here..."
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="btnText">Download</span>
+                <span id="spinner" class="spinner hidden"></span>
+            </button>
+        </form>
+
+        <div id="statusLog" class="status-log hidden">
+            <div id="statusMessages"></div>
+        </div>
+
+        <div id="videoPlayer" class="video-player hidden">
+            <video id="videoElement" controls controlsList="nodownload" oncontextmenu="return true;">
+                <source id="videoSource" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-actions">
+                <a href="#" id="downloadBtn" class="btn-primary" download="video.mp4">Download Video</a>
+                <p class="download-hint">Right-click on the video to save or download</p>
+            </div>
+        </div>
+
+        <div class="supported-platforms">
+            <h3>Supported Platforms</h3>
+            <ul>
+                <li>YouTube (youtube.com, youtu.be)</li>
+                <li>Facebook (facebook.com, fb.watch)</li>
+                <li>Instagram (instagram.com)</li>
+                <li>X/Twitter (x.com, twitter.com)</li>
+                <li>Vimeo (vimeo.com)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=20260208"></script>
+</body>
+</html>

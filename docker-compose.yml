@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  video-downloader:
+    build: .
+    container_name: video-downloader
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./downloads:/app/downloads
+    environment:
+      - MAX_FILE_AGE_SECONDS=3600
+      - MAX_FILE_SIZE_MB=500
+      - YTDLP_UPDATE_CHECK_INTERVAL=600
+      - POST_SERVE_DELETE_DELAY=300
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - video-downloader
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
