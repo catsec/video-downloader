@@ -19,6 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY static/ ./static/
 
+# Create logs directory
+RUN mkdir -p /app/logs
+
 # Non-root user for security
 RUN adduser -D -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

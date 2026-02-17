@@ -21,6 +21,7 @@ from .url_cleaner import URLCleaner
 from .downloader import VideoDownloader
 from .file_manager import FileManager
 from .config import settings
+from .activity_logger import log_activity
 
 # Configure logging to use uvicorn's logger
 logger = logging.getLogger("uvicorn")
@@ -157,8 +158,21 @@ async def health():
     return {"status": "healthy"}
 
 
+@app.get("/log")
+async def get_activity_log():
+    """Download the activity log file."""
+    log_path = Path("/app/logs/activity.log")
+    if not log_path.exists():
+        raise HTTPException(status_code=404, detail="No activity log found")
+    return FileResponse(
+        path=log_path,
+        media_type="text/plain",
+        filename="activity.log",
+    )
+
+
 @app.post("/api/download", response_model=VideoResponse)
-async def download_video(request: VideoRequest, background_tasks: BackgroundTasks):
+async def download_video(video_request: VideoRequest, background_tasks: BackgroundTasks, request: Request):
     """
     Download video from provided URL (non-streaming version).
     """
@@ -166,7 +180,7 @@ async def download_video(request: VideoRequest, background_tasks: BackgroundTask
     background_tasks.add_task(update_ytdlp)
 
     # Clean URL
-    clean_result = url_cleaner.clean_url(request.url)
+    clean_result = url_cleaner.clean_url(video_request.url)
     if not clean_result['success']:
         raise HTTPException(status_code=400, detail=clean_result['error'])
 
@@ -178,6 +192,9 @@ async def download_video(request: VideoRequest, background_tasks: BackgroundTask
 
     if not download_result['success']:
         raise HTTPException(status_code=500, detail=download_result['error'])
+
+    # Log activity
+    log_activity(request, video_request.url, platform, download_result)
 
     return VideoResponse(
         success=True,
@@ -235,6 +252,9 @@ async def download_video_stream(url: str, request: Request):
             if not download_result['success']:
                 yield {"event": "error", "data": json.dumps({"error": download_result['error']})}
                 return
+
+            # Log activity
+            log_activity(request, url, platform, download_result)
 
             # Send completion
             yield {"event": "complete", "data": json.dumps({
