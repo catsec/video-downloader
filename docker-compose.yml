@@ -1,8 +1,16 @@
-
+# video-downloader — app only. cloudflared and (optional) Authentik run as their own
+# stacks on the shared external `edge` network; this app just joins it, and the
+# tunnel/auth layer reaches it as  http://video-downloader:8000 .
+#
+#   docker network create edge        # once, shared by cloudflared/auth/apps
+#   docker compose up -d
 services:
   video-downloader:
     build: .
     container_name: video-downloader
+    # Optional direct host access. When fronted by cloudflared/Authentik on `edge`
+    # this isn't needed — and note the direct port BYPASSES Authentik (no auth).
+    # Remove this block to be reachable only via the tunnel/proxy.
     ports:
       - "8000:8000"
     volumes:
@@ -21,20 +29,8 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - app-network
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared-tunnel
-    command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    restart: unless-stopped
-    depends_on:
-      - video-downloader
-    networks:
-      - app-network
+      - edge
 
 networks:
-  app-network:
-    driver: bridge
+  edge:
+    external: true        # created once: docker network create edge
