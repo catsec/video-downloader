@@ -12,7 +12,14 @@ RUN apk add --no-cache \
 # Create app directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Non-root user, plus a virtualenv it OWNS. Deps (incl. yt-dlp) live in the venv, so the
+# app can `pip install --upgrade yt-dlp` at request time WITHOUT root — which is what the
+# fail→update→retry path needs (the app runs as appuser via su-exec).
+RUN adduser -D -u 1000 appuser
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies into the venv
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -20,11 +27,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY static/ ./static/
 
-# Create logs directory
-RUN mkdir -p /app/logs
-
-# Non-root user for security
-RUN adduser -D -u 1000 appuser && chown -R appuser:appuser /app
+# Logs dir + hand the app and the venv to appuser (so runtime upgrades can write to it)
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app /opt/venv
 
 # Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh

@@ -2,6 +2,7 @@
 
 import json
 import re
+import sys
 import uuid
 import asyncio
 import logging
@@ -435,19 +436,66 @@ class VideoDownloader:
             return {'success': False, 'error': f'Merge error: {str(e)}'}
 
     async def download_video(self, url: str, platform: str, status_queue: Optional[asyncio.Queue] = None) -> Dict:
-        """
-        Download video using yt-dlp with optimal settings.
-
-        Args:
-            url: Video URL
-            platform: Platform identifier
-            status_queue: Optional queue to receive status updates
-        """
+        """Download a video; if yt-dlp/ffmpeg fail, update yt-dlp and retry ONCE — but
+        only if a newer version actually exists. If it's already current, say so plainly
+        in the status log instead of pretending a retry will help."""
         async def send_status(msg: str):
             if status_queue:
                 await status_queue.put({"status": msg})
             logger.info(msg)
 
+        result = await self._attempt(url, platform, send_status)
+        if result.get('success'):
+            return result
+
+        # Processing failed (yt-dlp or ffmpeg). yt-dlp breaking on site changes is the
+        # common cause, so try a newer one and retry only if the version actually moved.
+        await send_status("Couldn’t process this video — checking for a newer yt-dlp…")
+        changed, summary = await self._update_tools()
+        if changed:
+            await send_status(f"{summary}. Retrying…")
+            retry = await self._attempt(url, platform, send_status)
+            if not retry.get('success'):
+                await send_status("Still failed after updating — the video may be private, removed, or unsupported.")
+            return retry
+
+        await send_status(f"{summary} — nothing newer to retry with, so an out-of-date "
+                          f"yt-dlp isn’t the problem. The site may have changed or the "
+                          f"video is unavailable.")
+        return result
+
+    async def _tool_version(self, *cmd: str) -> str:
+        """Return a tool's version string, or '' if it can't be determined."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            out, _ = await proc.communicate()
+            return out.decode('utf-8', 'replace').strip() if proc.returncode == 0 else ""
+        except Exception:
+            return ""
+
+    async def _update_tools(self) -> tuple:
+        """Best-effort upgrade of yt-dlp (the usual cause of breakage). It lives in an
+        appuser-owned venv, so this works at request time WITHOUT root. ffmpeg is
+        refreshed on container restart by the entrypoint (apk needs root, which we don't
+        have here). Returns (changed: bool, human_summary: str)."""
+        before = await self._tool_version("yt-dlp", "--version")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-m", "pip", "install", "--upgrade", "--no-cache-dir", "yt-dlp",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            _, err = await proc.communicate()
+            if proc.returncode != 0:
+                logger.warning(f"yt-dlp upgrade failed: {err.decode('utf-8', 'replace')[:300]}")
+        except Exception as e:
+            logger.warning(f"yt-dlp upgrade error: {e}")
+        after = await self._tool_version("yt-dlp", "--version")
+        if after and after != before:
+            return True, f"Updated yt-dlp {before or '?'} → {after}"
+        return False, f"yt-dlp is already the latest version ({after or before or 'unknown'})"
+
+    async def _attempt(self, url: str, platform: str, send_status) -> Dict:
+        """One full download + post-process attempt (no tool-update/retry)."""
         await send_status("Fetching video info...")
         # Fetch video title first
         title = await self._get_video_title(url, platform)
