@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # yt-dlp updates
     YTDLP_UPDATE_CHECK_INTERVAL: int = 600  # 10 minutes
 
+    # Cookies (optional — for age-restricted / authenticated videos)
+    # Mount a Netscape-format cookies file and set this to its path inside the container.
+    COOKIES_FILE: str = "/app/cookies.txt"
+
     # Security
     MAX_URL_LENGTH: int = 2000
     ALLOWED_DOMAINS: List[str] = [

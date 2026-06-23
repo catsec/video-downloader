@@ -16,6 +16,9 @@ services:
     volumes:
       - ./downloads:/app/downloads
       - ./logs:/app/logs
+      # Optional: mount a Netscape-format cookies file for age-restricted / authenticated videos.
+      # Export from your browser with the "Get cookies.txt LOCALLY" extension, then:
+      #   - ./cookies.txt:/app/cookies.txt:ro
     environment:
       - MAX_FILE_AGE_SECONDS=3600
       - MAX_FILE_SIZE_MB=500

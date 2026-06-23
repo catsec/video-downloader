@@ -7,7 +7,9 @@ import uuid
 import asyncio
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Callable, Awaitable
+from typing import Dict, List, Optional, Callable, Awaitable
+
+from .config import settings
 
 logger = logging.getLogger("uvicorn")
 
@@ -72,6 +74,7 @@ class VideoDownloader:
                 "--print", "%(title)s",
                 "--no-playlist",
                 *self._get_platform_options(platform),
+                *self._get_cookie_args(),
                 url
             ]
 
@@ -338,6 +341,7 @@ class VideoDownloader:
                 "-o", str(video_file),
                 "--no-playlist",
                 *self._get_platform_options(platform),
+                *self._get_cookie_args(),
                 url
             ]
 
@@ -361,6 +365,7 @@ class VideoDownloader:
                 "-o", str(audio_file),
                 "--no-playlist",
                 *self._get_platform_options(platform),
+                *self._get_cookie_args(),
                 url
             ]
 
@@ -537,6 +542,9 @@ class VideoDownloader:
             # Platform-specific optimizations
             *self._get_platform_options(platform),
 
+            # Cookies for age-restricted / authenticated videos (no-op if file absent)
+            *self._get_cookie_args(),
+
             # The URL to download
             url
         ]
@@ -612,6 +620,14 @@ class VideoDownloader:
                 'success': False,
                 'error': f'Unexpected error: {str(e)}'
             }
+
+    @staticmethod
+    def _get_cookie_args() -> List[str]:
+        """Return --cookies args if a cookies file is configured and exists on disk."""
+        cookies_file = settings.COOKIES_FILE
+        if cookies_file and Path(cookies_file).is_file():
+            return ["--cookies", cookies_file]
+        return []
 
     @staticmethod
     def _get_platform_options(platform: str) -> list:
